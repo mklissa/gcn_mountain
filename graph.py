@@ -59,15 +59,12 @@ def get_graph(edges,gg,real_states,adj,features,labels,source,sink,other_sources
 
     model = model_func(placeholders,edges,laplacian, input_dim=features[2][1], logging=True,FLAGS=FLAGS)
 
-    # remain_vars= tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='gcn')
     
     gcn_vars = []
     for var in tf.global_variables():
         if 'gcn' in var.name:
             gcn_vars.append(var)
-    # pdb.set_trace()
     sess.run(tf.variables_initializer(gcn_vars))
-    # sess.run(tf.variables_initializer(tf.global_variables()[16:]))
     
         
 
@@ -83,14 +80,14 @@ def get_graph(edges,gg,real_states,adj,features,labels,source,sink,other_sources
 
         outputs = sess.run([tf.nn.softmax(model.outputs)], feed_dict=feed_dict)[0]
 
-        # pdb.set_trace()
-        fig,ax = plt.subplots()
-        nx.draw(gg,pos, with_labels=False, font_size=10, node_size=25,node_color=outputs[:,1])
-        plt.savefig("updated_graph/iter{}.png".format(epoch))
-        plt.clf();plt.close()
+
+        # fig,ax = plt.subplots()
+        # nx.draw(gg,pos, with_labels=False, font_size=10, node_size=25,node_color=outputs[:,1])
+        # plt.savefig("updated_graph/iter{}.png".format(epoch))
+        # plt.clf();plt.close()
 
         t = time.time()
-        # pdb.set_trace()
+
         if epoch >-1:
             feed_dict = construct_feed_dict(adj, features, support, y_train, train_mask, placeholders)
         else:
