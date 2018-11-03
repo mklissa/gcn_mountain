@@ -9,94 +9,6 @@ import pdb
 
 
 
-def load_other(other_sources, other_sinks, path="gcn/data/",append='',force_feats=False, force_nofeats=False):
-
-    
-    info = np.loadtxt("{}{}_info.txt".format(path,append))
-    row,col= map(int,(info[0,0],info[0,1]))
-    source,sink=map(int,(info[1,0],info[1,1]))
-    size = row*col
-    vertices,file_features = map(int,info[2:,0]),info[2:,1]
-    edges = np.loadtxt("{}{}_edges.txt".format(path,append), dtype=np.int32)
-    graph_dict = dict(zip(vertices,range(len(vertices))))
-    featplot=None
-
-    # pdb.set_trace()
-    nofeats = (file_features == -1).sum()
-    if nofeats or force_nofeats: 
-        features = np.eye(len(vertices), dtype=np.float32)
-    else:
-        features = features[...,None]
-        features = np.hstack((1-features,features))
-        featplot = np.ones((row*col)) * -0.1
-        featplot[vertices] = features[:,1]
-        featplot =featplot.reshape(row,col)
-
-
-
-    if force_feats:
-        #Out of order right now
-
-        # features = np.hstack( (np.random.uniform(0.5,.8,size=(size,1)),
-        #                         np.random.uniform(0.2,0.5,size=(size,1))) )
-        for r in range(row):
-            features[row*r+5:row*(r+1),:] = np.roll(features[row*r+5:row*(r+1),:],1,axis=1)
-        
-        featplot=features[:,1]
-        features = preprocess_features(features)
-        features = features[vertices]
-
-
-    # pdb.set_trace()    
-               
-    file_other_sinks = []
-    source,sink = get_source_sink(source,sink,features,vertices,graph_dict)
-    labels=np.zeros((len(vertices)))
-    labels[sink] = 1
-
-    if len(np.argwhere(file_features != 0.)):
-        # pdb.set_trace()
-        file_other_sinks = np.argwhere(file_features != 0.)[:]
-        labels[file_other_sinks] =1
-        if len(file_other_sinks) > 1:
-            file_other_sinks = list(file_other_sinks.squeeze())
-        else:
-            file_other_sinks_list = []
-            file_other_sinks_list.append(file_other_sinks[0][0])
-            file_other_sinks = file_other_sinks_list
-
-    if other_sinks:
-        # pdb.set_trace()
-        other_sinks = map(graph_dict.get,other_sinks)
-        labels[other_sinks] =1
-        other_sinks += file_other_sinks
-        
-    else:
-        other_sinks = file_other_sinks
-
-    if other_sources:
-        other_sources = map(graph_dict.get,other_sources)
-
-
-
-    labels = encode_onehot(labels)
-    features = sparse_to_tuple(sp.lil_matrix(features))
-
-    # pdb.set_trace()    
-
-    
-    graphsize = reduce(lambda x,y: x*y,edges.shape)
-    edges = np.array( map(graph_dict.get,edges.reshape(graphsize,))).reshape(edges.shape)
-
-
-
-    adj = sp.coo_matrix((np.ones(len(edges)), (edges[:, 0], edges[:, 1])), shape=(len(vertices), len(vertices)), dtype=np.float32)
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj) # build symmetric adjacency matrix
-
-    graph_dict  = {v: k for k,v in graph_dict.iteritems()}
-    # pdb.set_trace()
-    return features, featplot, adj, labels, vertices, edges, row, col, source, sink, other_sources, other_sinks, graph_dict
-
 
 def get_source_sink(source,sink,feats,vertices,graph_dict):
     if source == -1 or sink == -1:
@@ -114,7 +26,7 @@ def get_source_sink(source,sink,feats,vertices,graph_dict):
     return source, sink
 
 def get_splits(y,source,sink,other_sources,other_sinks):
-    # pdb.set_trace()
+    pdb.set_trace()
     idx_train = [source,sink]
     # other_sinks = other_sinks[-2:]
     if len(other_sinks):

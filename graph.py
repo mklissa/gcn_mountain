@@ -23,7 +23,7 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 lastoutputs= None
-def get_graph(edges,adj,features,labels,source,sink,other_sources,other_sinks):
+def get_graph(edges,gg,real_states,adj,features,labels,source,sink,other_sources,other_sinks):
 
     sess = tf.Session()
 
@@ -76,14 +76,22 @@ def get_graph(edges,adj,features,labels,source,sink,other_sources,other_sinks):
 
     cost_val = []
 
+
+    pos = {i:(real_states[i][0],real_states[i][1]) for i in range(len(real_states))}
     start = time.time()
     for epoch in range(FLAGS.epochs):
 
+        outputs = sess.run([tf.nn.softmax(model.outputs)], feed_dict=feed_dict)[0]
 
+        # pdb.set_trace()
+        fig,ax = plt.subplots()
+        nx.draw(gg,pos, with_labels=False, font_size=10, node_size=25,node_color=outputs[:,1])
+        plt.savefig("updated_graph/iter{}.png".format(epoch))
+        plt.clf();plt.close()
 
         t = time.time()
         # pdb.set_trace()
-        if epoch >2:
+        if epoch >-1:
             feed_dict = construct_feed_dict(adj, features, support, y_train, train_mask, placeholders)
         else:
             feed_dict = construct_feed_dict(adj, features, support, y_val, val_mask, placeholders)
@@ -91,6 +99,8 @@ def get_graph(edges,adj,features,labels,source,sink,other_sources,other_sinks):
         feed_dict.update({placeholders['learning_rate']: FLAGS.learning_rate})
 
         outs = sess.run([model.opt_op, model.loss, model.accuracy,model.learning_rate], feed_dict=feed_dict)
+
+
 
 
     print("Total time for gcn {}".format(time.time()-start))

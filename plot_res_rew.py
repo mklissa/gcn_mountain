@@ -15,13 +15,11 @@ data=[]
 axes=[]
 seeds = []
 seeds+= add_b(140,[2,3,4,6,7,9])
-seeds += add_b(150,[4,6,9])
-seeds += add_b(160,[3,9])
-# seeds += add_b(170,[2,4])
-seeds += add_b(180,[2])
+# seeds += add_b(150,[4,6,9])
+# seeds += add_b(160,[3,9])
+# seeds += add_b(180,[2])
 # pdb.set_trace()
-# seeds= range(10)
-seeds = [154]
+# seeds = [156]
 for seed in seeds:
 
 
@@ -47,8 +45,6 @@ for seed in seeds:
 
 
 	dat = np.genfromtxt('res/mountain_graph0_seed{}.csv'.format(seed), delimiter=',')[:999]
-	print(len(dat))
-
 	print(len(dat))
 	rewards=[]
 	tot=0

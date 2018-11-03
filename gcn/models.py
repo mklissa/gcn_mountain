@@ -133,15 +133,15 @@ class GCN(Model):
 
         all_probs_outs=tf.nn.softmax(self.outputs)
         self.entropy =  - tf.reduce_sum(all_probs_outs * tf.log(all_probs_outs))
-        # self.loss += -1e-2*self.entropy
+        # self.loss += -1e-5*self.entropy
 
         # pdb.set_trace()
         first = tf.matmul(tf.transpose(tf.expand_dims(outs,1)),self.laplacian.astype(np.float32))
         total = tf.matmul(first,tf.expand_dims(outs,1))
-        self.midloss = tf.reduce_sum(total) / len(self.edges)
+        self.regloss = tf.reduce_sum(total) / len(self.edges)
         # pdb.set_trace()
-        # self.loss += 1*10**(-int(FLAGS.fig))*self.midloss
-        self.loss += 1e-0*self.midloss
+        # self.loss += 1*10**(-int(FLAGS.fig))*self.regloss
+        # self.loss += 1e-0*self.regloss
 
 
 
@@ -157,13 +157,14 @@ class GCN(Model):
                                         self.placeholders['labels_mask'])
 
     def _build(self):
+        dropout=False
         act = tf.nn.relu
         hid1 = FLAGS.hidden1
         self.layers.append(GraphConvolution(input_dim=self.input_dim,
                                             output_dim=FLAGS.hidden1,
                                             placeholders=self.placeholders,
                                             act=act,
-                                            dropout=True,
+                                            dropout=dropout,
                                             sparse_inputs=True,
                                             logging=self.logging))
 
@@ -171,7 +172,7 @@ class GCN(Model):
                                             output_dim=FLAGS.hidden2,
                                             placeholders=self.placeholders,
                                             act=act,
-                                            dropout=True,
+                                            dropout=dropout,
                                             # sparse_inputs=True,
                                             logging=self.logging))
         FLAGS.hidden1= FLAGS.hidden2
@@ -181,7 +182,7 @@ class GCN(Model):
                                             output_dim=FLAGS.hidden3,
                                             placeholders=self.placeholders,
                                             act=act,
-                                            dropout=True,
+                                            dropout=dropout,
                                             # sparse_inputs=True,
                                             logging=self.logging))
         FLAGS.hidden1= FLAGS.hidden3
@@ -190,7 +191,7 @@ class GCN(Model):
         #                                     output_dim=FLAGS.hidden4,
         #                                     placeholders=self.placeholders,
         #                                     act=act,
-        #                                     dropout=True,
+        #                                     dropout=dropout,
         #                                     # sparse_inputs=True,
         #                                     logging=self.logging)) 
         # FLAGS.hidden1= FLAGS.hidden4
@@ -199,7 +200,7 @@ class GCN(Model):
         #                                     output_dim=FLAGS.hidden5,
         #                                     placeholders=self.placeholders,
         #                                     act=act,
-        #                                     dropout=True,
+        #                                     dropout=dropout,
         #                                     # sparse_inputs=True,
         #                                     logging=self.logging)) 
         # FLAGS.hidden1= FLAGS.hidden5        
@@ -210,7 +211,7 @@ class GCN(Model):
                                             placeholders=self.placeholders,
                                             act=lambda x: x,
                                             # act=tf.nn.softmax,
-                                            dropout=True,
+                                            dropout=dropout,
                                             logging=self.logging))
         FLAGS.hidden1 = hid1
 

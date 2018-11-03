@@ -36,8 +36,8 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('gen', 1, 'Do you want to generate a graph?')
 flags.DEFINE_integer('seed', 3, 'Random seed.')
 flags.DEFINE_integer('epochs', 50, 'Number of epochs to train.')
-flags.DEFINE_float('learning_rate', 0.005, 'Initial learning rate.')
-flags.DEFINE_float('weight_decay', 1e-2, 'Weight for L2 loss on embedding matrix.')
+flags.DEFINE_float('learning_rate', 1e-3, 'Initial learning rate.')
+flags.DEFINE_float('weight_decay', 1e-3, 'Weight for L2 loss on embedding matrix.')
 flags.DEFINE_integer('nf', 1, 'Impose no features?')
 flags.DEFINE_integer('f', 0, 'Impose features?')
 flags.DEFINE_string('fig', '', 'Figure identifier.')
@@ -59,10 +59,9 @@ seed= FLAGS.seed
 plots=1
 
 
-
+import my_gym
 # pdb.set_trace()
-env = gym.envs.make("MountainCar-v0")
-env._max_episode_steps= 400
+env = gym.envs.make("SparseMountainCar-v0")
 env.seed(seed)
 np.random.seed(seed)
 print('seed: {} '.format(seed))
@@ -264,7 +263,7 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
     for i_episode in range(num_episodes):
 
         # pdb.set_trace()
-        if i_episode % 3 ==0 and gen_graph:
+        if i_episode % 1 ==0 and gen_graph:
             print('new graph')
             G = nx.Graph()
             states= []
@@ -383,35 +382,22 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
                     adj = adj+nx.adjacency_matrix(G)
                     gg = nx.from_scipy_sparse_matrix(adj)
 
+                 
 
-                    # pos = {i:(states[i][0],states[i][1]) for i in range(len(states))}
-                    # # this_color = [i_episode+1] * (t+1)
-                    # colors = np.array( [0] * len(states)  )
-                    # colors[-t:] = 1
-                    # plt.xlim((-1.2,0.6))
-                    # plt.ylim((-0.07,0.07))   
-
-                    # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color=colors,cmap='Spectral')
-
-
-                    # plt.savefig("presgraph/graph2{}.png".format(i_episode+1))
-                    # plt.clf();plt.close()
-
-                    # nx.draw(gg,pos, with_labels=False, font_size=7, node_size=5,node_color=colors,cmap='Spectral')
-
-                    # plt.savefig("presgraph/graph0{}.png".format(i_episode+1))
-                    # plt.clf();plt.close()                    
-
-                    
                     source = 0 
                     sink = len(real_states) -1
-                    max_sources = 40
-                    max_sinks=40
-                    other_sources =range(max_sources)
-                    other_sinks =range(len(real_states)-max_sinks,len(real_states))
+                    # max_sources = 40
+                    # max_sinks=40
+                    # other_sources =range(max_sources)
+                    # other_sinks =range(len(real_states)-max_sinks,len(real_states))
+                    other_sources=[source]
+                    other_sinks=[sink]
+                    max_sinks=1
 
                     # pdb.set_trace()
-                    features = np.eye(len(real_states), dtype=np.float32)
+                    features = featurize_state(real_states)
+                    # features = real_states
+                    # features = np.eye(len(real_states), dtype=np.float32)
                     features = sparse_to_tuple(sp.lil_matrix(features))
 
                     labels = np.zeros((len(real_states)))
@@ -419,55 +405,56 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
                     labels = encode_onehot(labels)
 
 
-                    V_weights = get_graph(gg.edges(),adj,features,labels,source,sink,other_sources,other_sinks)
-                    # pdb.set_trace()
-
-
+                    V_weights = get_graph(gg.edges(),gg,real_states,adj,features,labels,source,sink,other_sources,other_sinks)
                     # pos = {i:(real_states[i][0],real_states[i][1]) for i in range(len(real_states))}
                     # nx.draw(gg,pos, with_labels=False, font_size=10, node_size=25,node_color=V_weights)
                     # plt.show()
                     # # plt.savefig("graph.png")
                     # plt.clf();plt.close()
 
-                    # pdb.set_trace()  #########################################
 
 
-                    # minv=-10 if minv >-10 else minv
-                    interpol = make_interpolater(min(V_weights),max(V_weights),0,1.)
-                    # interpol = make_interpolater(min(V_weights),max(V_weights),minv,0.)
-                    targets = interpol(V_weights)
 
 
-                    # estimator_value.optimizer._lr= 0.1
-                    # estimator_value.optimizer._learning_rate= 0.1
-                    # pdb.set_trace()
-                    # for epo in range(30):
-                    #     estimator_value.update(real_states, targets,1e-3)
+                    # interpol = make_interpolater(min(V_weights),max(V_weights),0,1.)
+                    # targets = interpol(V_weights)
+                    targets = V_weights
 
-                    #     fig,ax = plt.subplots()
-                    #     v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions)) 
-                    #     ax.imshow(v_preds, interpolation='nearest', alpha=1.)
-                    #     # ax.autoscale(False)
-                    #     # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color=colors)
 
-                    #     # plt.show()
+                    pos = {i:(real_states[i][0],real_states[i][1]) for i in range(len(real_states))}
+                    fig,ax = plt.subplots()
+                    nx.draw(gg,pos, with_labels=False, font_size=10, node_size=25,node_color=targets)
+                    plt.savefig("updated_graph/last.png")
+                    plt.clf();plt.close()                    
+                    # plt.show()
+                    # plt.close()
 
-                    #     plt.savefig("newpreds/iter{}_newpreds{}.png".format(i_episode,epo))
-                    #     plt.clf();plt.close()
+                    estimator_value.optimizer._lr= 0.1
+                    estimator_value.optimizer._learning_rate= 0.1
+
+                    for epo in range(30):
+                        estimator_value.update(real_states, targets,1e-3)
+
+                        fig,ax = plt.subplots()
+                        v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions)) 
+                        ax.imshow(v_preds, interpolation='nearest', alpha=1.)
+                        # ax.autoscale(False)
+                        # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color=colors)
+
+                        # plt.show()
+
+                        plt.savefig("updated_preds/iter{}.png".format(epo))
+                        plt.clf();plt.close()
 
 
                     
                     # fig,ax = plt.subplots()
                     # v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions)) 
                     # ax.imshow(v_preds, interpolation='nearest', alpha=1.)
-                    # # nx.draw(gg,pos, with_labels=False, font_size=10, node_size=25,node_color=V_weights)
-                    # # ax.autoscale(False)
-                    # # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5)
-                    # # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color=colors)
+                    # ax.autoscale(False)
+                    # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5)
                     # plt.show()
-
-                    # pdb.set_trace()
-
+                    # plt.close()
 
 
                     # estimator_value.optimizer._lr=1e-5
