@@ -19,6 +19,10 @@ for ((i=0;i<20;i++));do
 	let seed=seed_bias+i
 
     tmux new-window -t $name: -n "seed$seed" 
+    tmux send-keys -t $name: "bash"
+    tmux send-keys -t $name:  Enter
+    tmux send-keys -t $name: "source activate soc"
+    tmux send-keys -t $name:  Enter    
     tmux send-keys -t $name: "python car.py --gen $1 --seed $seed"
     tmux send-keys -t $name: Enter
 
