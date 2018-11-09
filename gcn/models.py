@@ -1,6 +1,6 @@
 from gcn.layers import *
 from gcn.metrics import *
-from gcn.utils import *
+# from gcn.utils import *
 import gcn.globs as g
 import pdb
 
