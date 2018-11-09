@@ -16,7 +16,7 @@ from cont_utils import *
 from gcn.models import GCN
 from sim import *
 from transfer import *
-colors = [(0,0,0)] + [(cm.viridis(i)) for i in xrange(1,256)]
+colors = [(0,0,0)] + [(cm.viridis(i)) for i in range(1,256)]
 new_map = matplotlib.colors.LinearSegmentedColormap.from_list('new_map', colors, N=256)
 
 flags = tf.app.flags
