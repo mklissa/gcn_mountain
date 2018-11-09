@@ -86,12 +86,12 @@ class Model(object):
 
 
 class GCN(Model):
-    def __init__(self, placeholders, edges, laplacian, input_dim, **kwargs):
+    def __init__(self, placeholders, input_dim, **kwargs):
         super(GCN, self).__init__(**kwargs)
 
         with tf.variable_scope(self.name):
-            self.edges=edges
-            self.laplacian=laplacian
+            # self.edges=edges
+            # self.laplacian=laplacian
             self.inputs = placeholders['features']
             self.input_dim = input_dim
             # self.input_dim = self.inputs.get_shape().as_list()[1]  # To be supported in future Tensorflow versions
@@ -136,10 +136,9 @@ class GCN(Model):
         # self.loss += -1e-5*self.entropy
 
         # pdb.set_trace()
-        first = tf.matmul(tf.transpose(tf.expand_dims(outs,1)),self.laplacian.astype(np.float32))
-        total = tf.matmul(first,tf.expand_dims(outs,1))
-        self.regloss = tf.reduce_sum(total) / len(self.edges)
-        # pdb.set_trace()
+        # first = tf.matmul(tf.transpose(tf.expand_dims(outs,1)),self.laplacian.astype(np.float32))
+        # total = tf.matmul(first,tf.expand_dims(outs,1))
+        # self.regloss = tf.reduce_sum(total) / len(self.edges)
         # self.loss += 1*10**(-int(FLAGS.fig))*self.regloss
         # self.loss += 1e-0*self.regloss
 
@@ -168,24 +167,24 @@ class GCN(Model):
                                             sparse_inputs=True,
                                             logging=self.logging))
 
-        self.layers.append(GraphConvolution(input_dim=FLAGS.hidden1,
-                                            output_dim=FLAGS.hidden2,
-                                            placeholders=self.placeholders,
-                                            act=act,
-                                            dropout=dropout,
-                                            # sparse_inputs=True,
-                                            logging=self.logging))
-        FLAGS.hidden1= FLAGS.hidden2
+        # self.layers.append(GraphConvolution(input_dim=FLAGS.hidden1,
+        #                                     output_dim=FLAGS.hidden2,
+        #                                     placeholders=self.placeholders,
+        #                                     act=act,
+        #                                     dropout=dropout,
+        #                                     # sparse_inputs=True,
+        #                                     logging=self.logging))
+        # FLAGS.hidden1= FLAGS.hidden2
 
 
-        self.layers.append(GraphConvolution(input_dim=FLAGS.hidden2,
-                                            output_dim=FLAGS.hidden3,
-                                            placeholders=self.placeholders,
-                                            act=act,
-                                            dropout=dropout,
-                                            # sparse_inputs=True,
-                                            logging=self.logging))
-        FLAGS.hidden1= FLAGS.hidden3
+        # self.layers.append(GraphConvolution(input_dim=FLAGS.hidden2,
+        #                                     output_dim=FLAGS.hidden3,
+        #                                     placeholders=self.placeholders,
+        #                                     act=act,
+        #                                     dropout=dropout,
+        #                                     # sparse_inputs=True,
+        #                                     logging=self.logging))
+        # FLAGS.hidden1= FLAGS.hidden3
 
         # self.layers.append(GraphConvolution(input_dim=FLAGS.hidden3,
         #                                     output_dim=FLAGS.hidden4,
@@ -215,5 +214,26 @@ class GCN(Model):
                                             logging=self.logging))
         FLAGS.hidden1 = hid1
 
-    def predict(self):
-        return tf.nn.softmax(self.outputs)
+    def predict(self,gcn_sess,state,placeholders):
+        import time
+
+        start=time.time()
+        features = sparse_to_tuple(sp.lil_matrix(state))
+        print(time.time()-start)
+
+        adj=np.eye((len(state)))
+
+        start=time.time()
+        support = [preprocess_adj(adj)]   
+        print(time.time()-start)
+
+        start=time.time()
+        feed_dict = construct_feed_dict(adj, features, support, np.ones((1,2)), np.ones((1,2)), placeholders)
+        print(time.time()-start)
+
+        start=time.time()
+        preds = gcn_sess.run([tf.nn.softmax(self.outputs)], feed_dict=feed_dict)[0][0][1]
+        print(time.time()-start)
+
+        pdb.set_trace()
+        return preds

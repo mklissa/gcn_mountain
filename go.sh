@@ -2,7 +2,7 @@
 
 #!/usr/bin/bash
 
-seed_bias=180
+seed_bias=140
 
 
 
@@ -14,7 +14,7 @@ fi
 
 tmux new-session -d -s $name
 
-for ((i=0;i<10;i++));do
+for ((i=0;i<20;i++));do
 
 	let seed=seed_bias+i
 

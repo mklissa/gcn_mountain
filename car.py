@@ -17,6 +17,7 @@ import scipy.sparse as sp
 
 from cont_utils import *
 from graph import *
+from gcn.models import GCN
 
 
 from sklearn.kernel_approximation import RBFSampler
@@ -46,8 +47,8 @@ flags.DEFINE_string('app', '', 'For data file loading')
 flags.DEFINE_integer('max_degree', 2, 'Maximum Chebyshev polynomial degree.')
 
 
-
-flags.DEFINE_integer('hidden1', 64, 'Number of units in hidden layer 1.')
+flags.DEFINE_integer('hidden1', 400, 'Number of units in hidden layer 1.')
+# flags.DEFINE_integer('hidden1', 64, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden2', 46, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden3', 32, 'Number of units in hidden layer 1.')
 flags.DEFINE_integer('hidden4', 16, 'Number of units in hidden layer 1.')
@@ -56,7 +57,7 @@ flags.DEFINE_integer('hidden5', 8, 'Number of units in hidden layer 1.')
 
 gen_graph=FLAGS.gen
 seed= FLAGS.seed
-plots=0
+plots=1
 
 
 import my_gym
@@ -195,7 +196,7 @@ class ValueEstimator():
                 weights_initializer=tf.contrib.layers.xavier_initializer()
                 )
 
-
+            # pdb.set_trace()
             self.value_estimate = tf.squeeze(self.output_layer)
             self.loss = tf.squared_difference(self.value_estimate, self.target)
 
@@ -223,14 +224,14 @@ class ValueEstimator():
         # pdb.set_trace()
         state = featurize_state(state)
         feed_dict = { self.state: state, self.target: target,self.lr:lr }
-        _, loss = sess.run([self.train_op, self.loss], feed_dict)
 
+        _, loss = sess.run([self.train_op, self.loss], feed_dict)
         return loss
 
 
 # In[15]:
 
-def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, discount_factor=1.0):
+def actor_critic(sess, gcn, placeholders, env, estimator_policy, estimator_value, num_episodes, discount_factor=1.0):
     global gen_graph
 
     G = nx.Graph()
@@ -246,12 +247,6 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
             vinput.append([pos,vel])
     vinput = np.array(vinput)
 
-    # v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions)) 
-    # fig2,ax2 = plt.subplots()
-    # ax2a
-    # plt.savefig("vpreds/vpred{}.png".format(0))
-    # plt.clf();plt.close()    
-    # pdb.set_trace()
     name = "res/mountain_graph{}_seed{}.csv".format(gen_graph,seed)
     change_lr=0
 
@@ -298,7 +293,6 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
             value_next = estimator_value.predict([next_state])
             td_target = reward + (1-done) * discount_factor * value_next
             advantage = td_target - estimator_value.predict([state])
-            
 
 
             lr = 1e-3 if not change_lr else 1e-4
@@ -323,35 +317,34 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
                 if plots:
 
 
-                    pos = {i:(states[i][0],states[i][1]) for i in range(len(states))}
-                    this_color = [i_episode+1] * (t+1)
-                    colors += this_color
-                    fig,ax = plt.subplots()
-                    v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions))               
-                    plt.xlim((-1.2,0.6))
-                    plt.ylim((-0.07,0.07))   
-                    nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color='blue')
-                    # plt.show()
-                    plt.savefig("graphs/graph{}.png".format(i_episode+1))
-                    plt.clf();plt.close()
+                    # pos = {i:(states[i][0],states[i][1]) for i in range(len(states))}
+                    # this_color = [i_episode+1] * (t+1)
+                    # colors += this_color
+                    # fig,ax = plt.subplots()
+                    # plt.xlim((-1.2,0.6))
+                    # plt.ylim((-0.07,0.07))   
+                    # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color='blue')
+                    # # plt.show()
+                    # plt.savefig("graphs/graph{}.png".format(i_episode+1))
+                    # plt.clf();plt.close()
 
 
 
-
-                    fig,ax = plt.subplots()
-                    ax.imshow(v_preds, interpolation='nearest', alpha=1.)
-                    # ax.autoscale(False)
-                    # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color=colors)
-                    # plt.show()
-                    # plt.axis('off')
-                    plt.xticks([])
-                    plt.yticks([])
-                    plt.title("Actor-Critic",fontsize=17)
-                    plt.xlabel('Position',fontsize=17)
-                    plt.ylabel('Velocity',fontsize=17)
-                    # plt.title("Diffusion-Based Approximate Value Function")
-                    plt.savefig("vpreds0/vpred{}.png".format(i_episode+1))
-                    plt.clf();plt.close()
+                    # v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions))               
+                    # fig,ax = plt.subplots()
+                    # ax.imshow(v_preds, interpolation='nearest', alpha=1.)
+                    # # ax.autoscale(False)
+                    # # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color=colors)
+                    # # plt.show()
+                    # # plt.axis('off')
+                    # plt.xticks([])
+                    # plt.yticks([])
+                    # plt.title("Actor-Critic",fontsize=17)
+                    # plt.xlabel('Position',fontsize=17)
+                    # plt.ylabel('Velocity',fontsize=17)
+                    # # plt.title("Diffusion-Based Approximate Value Function")
+                    # plt.savefig("vpreds0/vpred{}.png".format(i_episode))
+                    # plt.clf();plt.close()
 
 
 
@@ -368,12 +361,9 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
 
                     radius = 0.02
                     real_states = np.array(states)
-
                     adj = nn.radius_neighbors_graph(real_states,radius,metric=metric)
                     adj = adj+nx.adjacency_matrix(G)
                     gg = nx.from_scipy_sparse_matrix(adj)
-
-                 
 
                     source = 0 
                     sink = len(real_states) -1
@@ -396,22 +386,26 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
                     labels = encode_onehot(labels)
 
 
-                    V_weights = get_graph(gg.edges(),gg,real_states,adj,features,labels,source,sink,other_sources,other_sinks)
-                    # pos = {i:(real_states[i][0],real_states[i][1]) for i in range(len(real_states))}
-                    # nx.draw(gg,pos, with_labels=False, font_size=10, node_size=25,node_color=V_weights)
-                    # plt.show()
-                    # # plt.savefig("graph.png")
-                    # plt.clf();plt.close()
-
-
-
-
-
-                    # interpol = make_interpolater(min(V_weights),max(V_weights),0,1.)
-                    # targets = interpol(V_weights)
+                    V_weights = get_graph(sess,gcn,placeholders,gg.edges(),gg,real_states,adj,features,labels,source,sink,other_sources,other_sinks,featurize_state)
                     targets = V_weights
 
+                    # pdb.set_trace()
+                    gcn_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, gcn.name)
+                    vf_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "value_estimator")
 
+                    for g_v,v_v in zip(gcn_vars,vf_vars):
+                        if '_2_' in g_v.name:
+                            
+                            if 'bias' in g_v.name:
+                                # pdb.set_trace()
+                                sess.run(tf.assign(v_v,tf.expand_dims(g_v[1],0) ))
+                            else:
+                                sess.run(tf.assign(v_v,tf.expand_dims(g_v[:,1],1) ))
+                        else:
+                            
+                            sess.run(tf.assign(v_v, g_v))
+
+                    
                     # pos = {i:(real_states[i][0],real_states[i][1]) for i in range(len(real_states))}
                     # fig,ax = plt.subplots()
                     # nx.draw(gg,pos, with_labels=False, font_size=10, node_size=25,node_color=targets)
@@ -420,12 +414,11 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
                     # plt.show()
                     # plt.close()
 
-                    estimator_value.optimizer._lr= 0.1
-                    estimator_value.optimizer._learning_rate= 0.1
+                    # estimator_value.optimizer._lr= 0.1
+                    # estimator_value.optimizer._learning_rate= 0.1
 
-                    for epo in range(30):
-                        estimator_value.update(real_states, targets,1e-3)
-
+                    # for epo in range(30):
+                    #     estimator_value.update(real_states, targets,1e-3)
                         # fig,ax = plt.subplots()
                         # v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions)) 
                         # ax.imshow(v_preds, interpolation='nearest', alpha=1.)
@@ -434,16 +427,15 @@ def actor_critic(sess,env, estimator_policy, estimator_value, num_episodes, disc
                         # # plt.show()
                         # plt.savefig("updated_preds/iter{}.png".format(epo))
                         # plt.clf();plt.close()
-
-
                     
-                    # fig,ax = plt.subplots()
-                    # v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions)) 
-                    # ax.imshow(v_preds, interpolation='nearest', alpha=1.)
+                    fig,ax = plt.subplots()
+                    v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions)) 
+                    ax.imshow(v_preds, interpolation='nearest', alpha=1.)
                     # ax.autoscale(False)
                     # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5)
                     # plt.show()
                     # plt.close()
+                    # pdb.set_trace()
 
 
                 break
@@ -462,11 +454,30 @@ with tf.Session() as sess:
     tf.set_random_seed(seed)
     global_step = tf.Variable(0, name="global_step", trainable=False)
 
+
+
     policy_estimator = PolicyEstimator(learning_rate=0.001)
+
     value_estimator = ValueEstimator(learning_rate=0.001)
 
+    num_supports = 1
+    placeholders = {
+        'adj': tf.placeholder(tf.float32, shape=(None, None)) , #unnormalized adjancy matrix
+        'support': [tf.sparse_placeholder(tf.float32) for _ in range(num_supports)],
+        'features': tf.sparse_placeholder(tf.float32),
+        'labels': tf.placeholder(tf.float32, shape=(None, 2)),
+        'labels_mask': tf.placeholder(tf.int32),
+        'dropout': tf.placeholder_with_default(0., shape=()),
+        'num_features_nonzero': tf.placeholder(tf.int32),  # helper variable for sparse dropout
+        'learning_rate': tf.placeholder(tf.float32)
+    }
+    gcn = GCN(placeholders, input_dim=feats, logging=True,FLAGS=FLAGS)
+
+
+
     sess.run(tf.global_variables_initializer())
-    stats = actor_critic(sess,env, policy_estimator, value_estimator, 1000, discount_factor=0.99)
+    stats = actor_critic(sess, gcn, placeholders, env, policy_estimator,
+             value_estimator, num_episodes=1000, discount_factor=0.99)
 
 
 
