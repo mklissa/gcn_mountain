@@ -57,7 +57,7 @@ flags.DEFINE_integer('hidden5', 8, 'Number of units in hidden layer 1.')
 
 gen_graph=FLAGS.gen
 seed= FLAGS.seed
-plots=1
+plots=0
 
 
 import my_gym
@@ -330,26 +330,26 @@ def actor_critic(sess, gcn, placeholders, env, estimator_policy, estimator_value
 
 
 
-                    # v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions))               
-                    # fig,ax = plt.subplots()
-                    # ax.imshow(v_preds, interpolation='nearest', alpha=1.)
-                    # # ax.autoscale(False)
-                    # # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color=colors)
-                    # # plt.show()
-                    # # plt.axis('off')
-                    # plt.xticks([])
-                    # plt.yticks([])
-                    # plt.title("Actor-Critic",fontsize=17)
-                    # plt.xlabel('Position',fontsize=17)
-                    # plt.ylabel('Velocity',fontsize=17)
-                    # # plt.title("Diffusion-Based Approximate Value Function")
-                    # plt.savefig("vpreds0/vpred{}.png".format(i_episode))
-                    # plt.clf();plt.close()
+                    v_preds=estimator_value.predict(vinput).reshape(len(velolicties),len(positions))               
+                    fig,ax = plt.subplots()
+                    ax.imshow(v_preds, interpolation='nearest', alpha=1.)
+                    # ax.autoscale(False)
+                    # nx.draw(G,pos, with_labels=False, font_size=7, node_size=5,node_color=colors)
+                    # plt.show()
+                    # plt.axis('off')
+                    plt.xticks([])
+                    plt.yticks([])
+                    plt.title("Actor-Critic",fontsize=17)
+                    plt.xlabel('Position',fontsize=17)
+                    plt.ylabel('Velocity',fontsize=17)
+                    # plt.title("Diffusion-Based Approximate Value Function")
+                    plt.savefig("vpreds0/vpred{}.png".format(i_episode))
+                    plt.clf();plt.close()
 
 
 
 
-                if  t<env._max_episode_steps-1 and gen_graph:
+                if t<env._max_episode_steps-1 and gen_graph:
 
                     gen_graph=0
                     change_lr=1
