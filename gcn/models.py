@@ -40,7 +40,7 @@ class Model(object):
 
     def build(self):
         """ Wrapper for _build() """
-        # with tf.variable_scope(self.name):
+
         self._build()
 
         # Build sequential layer model
@@ -159,13 +159,14 @@ class GCN(Model):
         dropout=False
         act = tf.nn.relu
         hid1 = FLAGS.hidden1
-        self.layers.append(GraphConvolution(input_dim=self.input_dim,
-                                            output_dim=FLAGS.hidden1,
-                                            placeholders=self.placeholders,
-                                            act=act,
-                                            dropout=dropout,
-                                            sparse_inputs=True,
-                                            logging=self.logging))
+        FLAGS.hidden1=self.input_dim
+        # self.layers.append(GraphConvolution(input_dim=self.input_dim,
+        #                                     output_dim=FLAGS.hidden1,
+        #                                     placeholders=self.placeholders,
+        #                                     act=act,
+        #                                     dropout=dropout,
+        #                                     sparse_inputs=True,
+        #                                     logging=self.logging))
 
         # self.layers.append(GraphConvolution(input_dim=FLAGS.hidden1,
         #                                     output_dim=FLAGS.hidden2,
@@ -209,7 +210,7 @@ class GCN(Model):
                                             output_dim=self.output_dim,
                                             placeholders=self.placeholders,
                                             act=lambda x: x,
-                                            # act=tf.nn.softmax,
+                                            sparse_inputs=True,
                                             dropout=dropout,
                                             logging=self.logging))
         FLAGS.hidden1 = hid1
