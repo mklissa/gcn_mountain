@@ -14,6 +14,7 @@ from sklearn import metrics
 import gcn.globs as g
 from cont_utils import *
 from gcn.models import GCN
+from pylab import *
 # from sim import *
 # from transfer import *
 colors = [(0,0,0)] + [(cm.viridis(i)) for i in range(1,256)]
